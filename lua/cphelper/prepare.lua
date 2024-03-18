@@ -58,7 +58,12 @@ function M.prepare_files(problem_dir, tests)
         print("Wrote rust-project.json")
     end
 
-    vim.cmd("e " .. problem_dir:joinpath("solution." .. extension):absolute())
+    local filename = "solution."..extension
+    local source = problem_dir:joinpath(filename)
+    if vim.g["cph#"..preferred_lang.."#template_path"] ~= nil then
+        path.new(vim.g["cph#"..preferred_lang.."#template_path"]):copy({ override = true, destination = source })
+    end
+    vim.cmd("e " .. source:absolute())
 end
 
 return M
