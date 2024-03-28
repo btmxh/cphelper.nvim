@@ -94,7 +94,19 @@ local function receive(parse_result, client)
     respond(client, { empty = true })
 end
 
-local function infer_language_id(filename)
+local function infer_language(filename)
+    for name, extension in pairs(def.extensions) do
+        if filename:match("%." .. extension .. "$") then
+            return name
+        end
+    end
+    return nil
+end
+
+local function language_id(name)
+    if name == nil then
+        return nil
+    end
     local default_ids = {
         c = 43,          -- GNU C11 5.1.0
         cpp = 54,        -- GNU G++17 7.3.0
@@ -104,13 +116,7 @@ local function infer_language_id(filename)
         kotlin = 88,     -- Kotlin 1.9.21
         javascript = 34, -- JavaScript V8 4.8.0
     }
-    for name, extension in pairs(def.extensions) do
-        if filename:match("%." .. extension .. "$") then
-            print(name)
-            return vim.g["cph#" .. name .. "#language_id"] or default_ids[name]
-        end
-    end
-    return nil
+    return vim.g["cph#" .. name .. "#language_id"] or default_ids[name]
 end
 
 local function submit(client)
@@ -128,20 +134,25 @@ local function submit(client)
             problem_name = contest_id .. problem_name
 
             print(vim.inspect(current))
-            local source_file = assert(io.open(current:absolute(), "r"))
-            local content = source_file:read("*all")
-            source_file:close()
-
-            local language_id = infer_language_id(current:absolute())
-            if language_id == nil then
+            local lang_name = infer_language(current:absolute())
+            local lang_id = language_id(lang_name)
+            if lang_id == nil then
                 print("Codeforces does not support submissions using this language")
             else
+                local source_file = assert(io.open(current:absolute(), "r"))
+                local content = source_file:read("*all")
+                source_file:close()
+
+                if vim.g["cph#" .. lang_name .. "#transform"] ~= nil then
+                    content = vim.g["cph#" .. lang_name .. "#transform"](content)
+                end
+
                 json = {
                     empty = false,
                     sourceCode = content,
                     problemName = problem_name,
                     url = problem.url,
-                    languageId = language_id,
+                    languageId = lang_id,
                 }
             end
         end
