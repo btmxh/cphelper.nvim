@@ -58,10 +58,12 @@ function M.prepare_files(problem_dir, tests)
         print("Wrote rust-project.json")
     end
 
-    local filename = "solution."..extension
+    local filename = "solution." .. extension
     local source = problem_dir:joinpath(filename)
-    if vim.g["cph#"..preferred_lang.."#template_path"] ~= nil then
-        path.new(vim.g["cph#"..preferred_lang.."#template_path"]):copy({ override = true, destination = source })
+    if vim.g["cph#" .. preferred_lang .. "#template_path"] ~= nil then
+        if vim.fn.filereadable(source:absolute()) == 0 or vim.fn.confirm("Source file already exists.", "&Create new\n&Use existing") == 1 then
+            path.new(vim.g["cph#" .. preferred_lang .. "#template_path"]):copy({ override = true, destination = source })
+        end
     end
     vim.cmd("e " .. source:absolute())
 end
