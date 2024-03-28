@@ -33,14 +33,24 @@ end
 
 -- Creates the sample input, sample output and solution source code files for the problem
 --- @param problem_dir Path #The directory of the problem
---- @param tests table #List of { input = "foo", ouput = "bar" }
-function M.prepare_files(problem_dir, tests)
+--- @param problem table #JSON deserialized metadata of the problem
+function M.prepare_files(problem_dir, problem)
+    local tests = problem.tests
     for i, test in pairs(tests) do
         problem_dir:joinpath("input" .. i):write(test.input, "w")
         problem_dir:joinpath("output" .. i):write(test.output, "w")
     end
     print("Wrote test(s)")
     local extension = def.extensions[preferred_lang]
+
+    local metadata_file = io.open(problem_dir:joinpath("metadata.json"):absolute(), "w")
+    if metadata_file == nil then
+        print("WARNING: unable to write problem metadata")
+    else
+        metadata_file:write(vim.json.encode(problem))
+        metadata_file:close()
+        print("Wrote problem metadata")
+    end
 
     if vim.g["cph#rust#createjson"] then
         local sysroot =

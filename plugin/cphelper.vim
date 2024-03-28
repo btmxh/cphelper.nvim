@@ -1,4 +1,5 @@
-command CphReceive lua require 'cphelper.receive'.receive()
+command CphReceive lua require 'cphelper.receive'.start()
+command CphSubmit lua require 'cphelper.receive'.submit()
 command CphStop lua require 'cphelper.receive'.stop()
 command -nargs=* CphTest silent lcd %:p:h | lua require 'cphelper.process_tests'.process(<f-args>)
 command -nargs=* CphRetest silent lcd %:p:h | lua require 'cphelper.process_tests'.process_retests(<f-args>)
