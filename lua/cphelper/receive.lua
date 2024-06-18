@@ -119,6 +119,20 @@ local function language_id(name)
     return vim.g["cph#" .. name .. "#language_id"] or default_ids[name]
 end
 
+local function extract_problem_name(url)
+    local contest_id, local_name = string.match(url, "codeforces%.com%/contest%/(%d+)%/problem%/([A-Z])")
+    if contest_id ~= nil and local_name ~= nil then
+        return contest_id .. local_name
+    end
+
+    contest_id, local_name = string.match(url, "codeforces%.com%/problemset%/problem%/(%d+)%/([A-Z])")
+    if contest_id ~= nil and local_name ~= nil then
+        return contest_id .. local_name
+    end
+
+    return nil
+end
+
 local function submit(client)
     local json = { empty = true }
     if M.current ~= nil then
@@ -128,12 +142,10 @@ local function submit(client)
         local problem_file = assert(io.open(current:parent():joinpath("metadata.json"):absolute(), "r"))
         local problem = vim.json.decode(problem_file:read("*all"))
         problem_file:close()
-        local contest_id, problem_name = string.match(problem.url, "codeforces%.com%/contest%/(%d+)%/problem%/([A-Z])")
-        if contest_id ~= nil and problem_name ~= nil then
+        local problem_name = extract_problem_name(problem.url)
+        if problem_name ~= nil then
             print("Submitting to Codeforces")
-            problem_name = contest_id .. problem_name
 
-            print(vim.inspect(current))
             local lang_name = infer_language(current:absolute())
             local lang_id = language_id(lang_name)
             if lang_id == nil then
