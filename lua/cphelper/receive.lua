@@ -134,7 +134,6 @@ local function extract_problem_name(url)
 end
 
 local function submit(client)
-    local json = { empty = true }
     if M.current ~= nil then
         -- only supporting auto-submit to codeforces right now
         local current = M.current
@@ -155,21 +154,25 @@ local function submit(client)
                 local content = source_file:read("*all")
                 source_file:close()
 
-                if vim.g["cph#" .. lang_name .. "#transform"] ~= nil then
-                    content = vim.g["cph#" .. lang_name .. "#transform"](content)
+                local accept = function(transformedCode)
+                    respond(client, {
+                        empty = false,
+                        sourceCode = transformedCode,
+                        problemName = problem_name,
+                        url = problem.url,
+                        languageId = lang_id,
+                    })
                 end
-
-                json = {
-                    empty = false,
-                    sourceCode = content,
-                    problemName = problem_name,
-                    url = problem.url,
-                    languageId = lang_id,
-                }
+                if vim.g["cph#" .. lang_name .. "#transform"] ~= nil then
+                    vim.g["cph#" .. lang_name .. "#transform"](content, accept)
+                else
+                    accept(content)
+                end
             end
         end
+    else
+        respond(client, { empty = true })
     end
-    respond(client, json)
 end
 
 function M.start()
