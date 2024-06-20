@@ -27,25 +27,34 @@ function M.run_test(case, cmd)
     local output_arr = {}
     local err_arr = {}
 
+    local function append_data(data, lines, prefix_padding)
+        for i = 1, #data do
+            if i == 1 and #lines > 0 then
+                lines[#lines] = lines[#lines] .. data[i]
+            else
+                lines[#lines + 1] = prefix_padding .. data[i]
+            end
+        end
+    end
+
     local function on_stdout(_, data, _)
-        for index, value in ipairs(data) do
-            data[index] = "  " .. value
-        end
-        extend(output_arr, data)
-        if output_arr[#output_arr] == "  " then
-            output_arr[#output_arr] = nil -- EOF is an empty string
-        end
+        append_data(data, output_arr, "  ")
     end
 
     local function on_stderr(_, data, _)
-        for index, value in ipairs(data) do
-            data[index] = "  " .. value
-        end
-        extend(err_arr, data)
-        err_arr[#err_arr] = nil
+        append_data(data, err_arr, "  ")
     end
 
     local function on_exit(_, exit_code, _)
+        -- last lines of stdout/stderr are blank, due to how println works
+        -- we don't want to include that in the output window
+        if output_arr[#output_arr]:match("^%s*$") then
+            output_arr[#output_arr] = nil
+        end
+        if err_arr[#err_arr]:match("^%s*$") then
+            err_arr[#err_arr] = nil
+        end
+
         -- Strip CR on Windows
         if fn.has("win32") then
             for k, v in pairs(output_arr) do
@@ -96,7 +105,9 @@ function M.run_test(case, cmd)
         insert(display, string.format("  Status: Timed out after %d ms", timeout))
         fn.jobstop(job_id)
     end
+
     insert(display, "")
     return display, success
 end
+
 return M
